@@ -1,0 +1,1184 @@
+/* =========================================================
+   Invitación de boda · Juan & Yerianny
+   Paleta: blanco papel + dorado elegante
+   Para cambiar el color de acento, edita solo --accent / --accent-dark
+   ========================================================= */
+:root {
+    /* Colores base (formato HSL sin hsl() para poder usar opacidad) */
+    --ink: 30 13% 17%;            /* texto principal, espresso */
+    --accent: 42 48% 50%;         /* dorado elegante  #bd9b42 */
+    --accent-light: 44 60% 66%;   /* dorado claro     #deC27a */
+    --accent-dark: 40 58% 35%;    /* oro viejo        #8d6c25 */
+    --accent-soft: 43 55% 90%;    /* champán claro    #f5ecd6 */
+    --paper: 40 20% 98%;          /* blanco papel     #fbfaf7 */
+
+    /* Alias que usa java2.js (toast) */
+    --foreground: var(--ink);
+    --brown: var(--accent-dark);
+
+    --font-display: 'Cormorant Garamond', 'Georgia', 'Times New Roman', serif;
+    --font-body: 'Montserrat', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Efecto de capas */
+    --layer-overlap: 40px;   /* no cambiar: la sombra ondulada está calculada para 40px */
+    --layer-radius: 2rem;
+    --wave-w: calc(100% / 6);   /* ancho de cada ola: 6 olas por pantalla */
+    --layer-shadow:
+        0 -1px 0 hsl(var(--ink) / 0.04),
+        0 -10px 18px -10px hsl(var(--ink) / 0.22),
+        0 -26px 44px -26px hsl(var(--ink) / 0.28);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    font-size: 0.975rem;
+    line-height: 1.7;
+    color: hsl(var(--ink));
+    background: hsl(var(--paper)) url('fondo.jpg') center top / cover fixed;
+    -webkit-font-smoothing: antialiased;
+}
+
+button { font-family: inherit; }
+
+/* ---------------------------------------------------------
+   Intro: sobre animado (video) + transición a la invitación
+   --------------------------------------------------------- */
+body.intro-active { overflow: hidden; height: 100%; }
+
+.intro {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: #e9d8c3;              /* tono del papel del sobre mientras carga */
+    cursor: pointer;
+    overflow: hidden;
+    -webkit-tap-highlight-color: transparent;
+    transition: opacity 1.4s cubic-bezier(.4, 0, .2, 1), filter 1.4s ease, transform 1.8s cubic-bezier(.2, .6, .2, 1);
+}
+
+.intro:focus-visible { outline: none; }
+
+.intro-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;                /* celular (vertical): llena la pantalla */
+    object-position: center 48%;
+    background: #e9d8c3;
+    pointer-events: none;
+}
+
+/* Pantallas horizontales (PC / tablet acostada): el video completo, centrado */
+@media (min-aspect-ratio: 4/5) {
+    .intro { background: radial-gradient(ellipse at center, #efe1cf 0%, #dcc6ab 100%); }
+    .intro-video { object-fit: contain; background: transparent; }
+}
+
+/* Halo dorado que late sobre el sello para invitar a tocar */
+.intro-seal-glow {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    width: clamp(110px, 30vmin, 190px);
+    aspect-ratio: 1;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+    box-shadow: 0 0 0 1px rgba(222, 194, 122, 0.55), 0 0 28px 6px rgba(222, 194, 122, 0.35);
+    animation: sealPulse 2.4s ease-in-out infinite;
+    transition: opacity 0.5s ease;
+}
+
+@keyframes sealPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.25; }
+    50%      { transform: translate(-50%, -50%) scale(1.08); opacity: 1; }
+}
+
+.intro-hint {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(9vh + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    text-align: center;
+    color: hsl(var(--accent-dark));
+    pointer-events: none;
+    animation: hintIn 1.4s 0.4s ease both;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.intro-hint-names {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(1.6rem, 6vw, 2.2rem);
+    line-height: 1.1;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.intro-hint-text {
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.32em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.3rem;
+    border: 1px solid hsl(var(--accent) / 0.55);
+    border-radius: 999px;
+    background: rgba(251, 246, 238, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    animation: hintBreath 2.4s ease-in-out infinite;
+}
+
+@keyframes hintIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes hintBreath {
+    0%, 100% { opacity: 0.75; }
+    50%      { opacity: 1; }
+}
+
+/* Al tocar: se esconden las pistas y corre el video */
+.intro.is-playing { cursor: default; }
+.intro.is-playing .intro-hint { opacity: 0; transform: translateY(8px); animation: none; }
+.intro.is-playing .intro-seal-glow { opacity: 0; animation: none; }
+
+/* Velo de luz cálida: continúa el destello final del video */
+.intro-veil {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    background:
+        radial-gradient(ellipse at 50% 46%, #ffffff 0%, #fff6e6 32%, #fbe7c9 70%, #f3d9b2 100%);
+}
+
+.intro-sparkles {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 10001;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.8s ease;
+}
+
+/* Fase 1: el video se disuelve en la luz */
+body.is-revealing .intro {
+    opacity: 0;
+    transform: scale(1.06);
+    filter: blur(6px) brightness(1.15);
+    pointer-events: none;
+}
+
+body.is-revealing .intro-veil {
+    visibility: visible;
+    animation: veilReveal 3s cubic-bezier(.4, 0, .2, 1) forwards;
+}
+
+body.is-revealing .intro-sparkles { opacity: 1; }
+
+@keyframes veilReveal {
+    0%   { opacity: 1; }
+    35%  { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+/* Fase 2: la portada "se revela" como una foto que sale de la luz */
+body.is-revealing .hero-bg {
+    animation: heroDevelop 3.2s cubic-bezier(.2, .6, .2, 1) both;
+}
+
+@keyframes heroDevelop {
+    0%   { scale: 1.14; filter: brightness(1.7) saturate(0.5) blur(14px); }
+    40%  { filter: brightness(1.35) saturate(0.75) blur(6px); }
+    100% { scale: 1;    filter: none; }
+}
+
+body.is-revealing .hero-kicker,
+body.is-revealing .hero-names,
+body.is-revealing .hero-date,
+body.is-revealing .hero-scroll {
+    animation: heroTextIn 1.6s cubic-bezier(.2, .7, .2, 1) both;
+}
+
+body.is-revealing .hero-kicker { animation-delay: 1.3s; }
+body.is-revealing .hero-names  { animation-delay: 1.6s; animation-name: heroNamesIn; animation-duration: 2s; }
+body.is-revealing .hero-date   { animation-delay: 2.1s; }
+body.is-revealing .hero-scroll { animation-delay: 2.6s; }
+
+@keyframes heroTextIn {
+    from { opacity: 0; transform: translateY(14px); }
+    to   { opacity: 1; transform: none; }
+}
+
+@keyframes heroNamesIn {
+    from { opacity: 0; letter-spacing: 0.18em; filter: blur(8px); }
+    to   { opacity: 1; letter-spacing: 0.01em; filter: blur(0); }
+}
+
+/* .hero-scroll ya usa transform para centrarse */
+body.is-revealing .hero-scroll { animation-name: heroScrollIn; }
+@keyframes heroScrollIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+body.intro-done .intro,
+body.intro-done .intro-veil,
+body.intro-done .intro-sparkles { display: none; }
+
+/* Botón de música entra suave */
+.music-player.is-visible { animation: heroTextIn 0.9s ease both; }
+
+/* ---------------------------------------------------------
+   Botones
+   --------------------------------------------------------- */
+.btn-wedding {
+    display: inline-block;
+    padding: 0.8rem 2rem;
+    border-radius: 999px;
+    border: 1px solid hsl(var(--accent-dark) / 0.6);
+    background: linear-gradient(135deg, hsl(var(--accent-dark)) 0%, hsl(var(--accent)) 50%, hsl(var(--accent-dark)) 100%);
+    background-size: 200% 100%;
+    color: #fff;
+    text-shadow: 0 1px 1px hsl(var(--accent-dark) / 0.6);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    box-shadow: 0 8px 20px -10px hsl(var(--accent-dark) / 0.7);
+    transition: background-position 0.5s ease, transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.btn-wedding:hover {
+    background-position: 100% 0;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px -10px hsl(var(--accent-dark) / 0.8);
+}
+
+.btn-wedding:focus-visible,
+.carousel-btn:focus-visible,
+.music-button:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 3px;
+}
+
+.btn-outline {
+    background: transparent;
+    border-color: hsl(var(--accent));
+    color: hsl(var(--accent-dark));
+    text-shadow: none;
+    box-shadow: none;
+}
+
+.btn-outline:hover { background: hsl(var(--accent) / 0.12); }
+
+/* ---------------------------------------------------------
+   Reproductor de música
+   --------------------------------------------------------- */
+.music-player {
+    position: fixed;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    right: 1rem;
+    z-index: 1000;
+}
+
+.music-button {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    border: 1px solid hsl(var(--accent) / 0.4);
+    background: hsl(var(--paper) / 0.92);
+    color: hsl(var(--accent-dark));
+    cursor: pointer;
+    box-shadow: 0 6px 18px -6px hsl(var(--ink) / 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+/* ---------------------------------------------------------
+   Portada única a pantalla completa
+   --------------------------------------------------------- */
+.hero {
+    position: sticky;              /* las capas se deslizan por encima */
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    min-height: 520px;
+    overflow: hidden;
+    z-index: 0;
+    color: #fff;
+}
+
+.hero-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: -60px;                    /* colchón para el parallax (igual a BUFFER_PX en JS) */
+    height: calc(100% + 60px);
+    background: url('foto0.jpg') center 25% / cover no-repeat;
+    will-change: transform;
+}
+
+.hero-shade {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(to top, rgba(30, 24, 18, 0.72) 0%, rgba(30, 24, 18, 0.25) 38%, rgba(30, 24, 18, 0) 60%),
+        linear-gradient(to bottom, rgba(30, 24, 18, 0.25) 0%, rgba(30, 24, 18, 0) 18%);
+}
+
+.hero-text {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(var(--layer-overlap) + 4.5rem);
+    padding: 0 1.5rem;
+    text-align: center;
+}
+
+.hero-kicker {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: clamp(1.15rem, 3.5vw, 1.4rem);
+    opacity: 0.92;
+    margin-bottom: 0.25rem;
+}
+
+.hero-names {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: clamp(3rem, 13vw, 6rem);
+    line-height: 1;
+    letter-spacing: 0.01em;
+    text-shadow: 0 2px 24px rgba(0, 0, 0, 0.25);
+}
+
+.hero-amp {
+    font-style: italic;
+    font-size: 0.8em;
+    color: hsl(var(--accent-light));
+}
+
+.hero-date {
+    margin-top: 0.9rem;
+    font-size: 0.8rem;
+    letter-spacing: 0.28em;
+    opacity: 0.9;
+}
+
+.hero-scroll {
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--layer-overlap) + 1.25rem);
+    width: 1px;
+    height: 2.5rem;
+    background: rgba(255, 255, 255, 0.35);
+    transform: translateX(-50%);
+    overflow: hidden;
+}
+
+.hero-scroll span {
+    position: absolute;
+    left: 0;
+    top: -40%;
+    width: 1px;
+    height: 40%;
+    background: #fff;
+    animation: scrollLine 2.2s ease-in-out infinite;
+}
+
+@keyframes scrollLine {
+    0%   { top: -40%; }
+    100% { top: 100%; }
+}
+
+/* ---------------------------------------------------------
+   Secciones en capas alternadas:
+   una ARRIBA (elevada, sombra arriba y abajo),
+   la siguiente ABAJO (hundida, recibe la sombra),
+   la siguiente otra vez ARRIBA... y así.
+   java2.js asigna .layer--up / .layer--down a las secciones
+   visibles, así la alternancia no se rompe si la sección de
+   invitados está oculta.
+   --------------------------------------------------------- */
+.layers {
+    position: relative;
+    z-index: 1;
+}
+
+.layer {
+    position: relative;
+    text-align: center;
+    padding: 4.25rem 1.25rem;
+}
+
+/* Sección elevada: bordes ondulados arriba y abajo (máscara SVG).
+   --wave-w define cuántas olas caben: 100%/6 = 6 olas a lo ancho
+   de la pantalla (10 en escritorio). La ola mide 18px de alto. */
+.layer--up {
+    z-index: 3;
+    margin: calc(var(--layer-overlap) * -1) 0;
+    background: hsl(var(--paper)) url('fondo.jpg') center / cover;
+    padding-top: calc(4.25rem + 16px);
+    padding-bottom: calc(4.25rem + 16px);
+    -webkit-mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cg transform='translate%280 18%29 scale%281 -1%29'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/g%3E%3C/svg%3E") left top / var(--wave-w) 18px repeat-x,
+        linear-gradient(#000, #000) left center / 100% calc(100% - 34px) no-repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/svg%3E") left bottom / var(--wave-w) 18px repeat-x;
+            mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cg transform='translate%280 18%29 scale%281 -1%29'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/g%3E%3C/svg%3E") left top / var(--wave-w) 18px repeat-x,
+        linear-gradient(#000, #000) left center / 100% calc(100% - 34px) no-repeat,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/svg%3E") left bottom / var(--wave-w) 18px repeat-x;
+}
+
+/* Sección hundida: recibe la sombra de las hojas elevadas.
+   1) sombra ondulada que sigue la forma de la ola (SVG desenfocado)
+   2) degradado gris amplio que se desvanece hacia el centro */
+.layer--down {
+    z-index: 1;
+    padding-top: calc(4.25rem + var(--layer-overlap));
+    padding-bottom: calc(4.25rem + var(--layer-overlap));
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='170' viewBox='0 0 150 170' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='b' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='10'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-150 -60 L-150 24 C-112.5 24 -112.5 38 -75.0 38 C-37.5 38 -37.5 24 0 24 C37.5 24 37.5 38 75.0 38 C112.5 38 112.5 24 150 24 C187.5 24 187.5 38 225.0 38 C262.5 38 262.5 24 300 24 L300 -60 Z' fill='rgb%2847,41,35%29' fill-opacity='0.34' filter='url%28%23b%29' transform='translate%280 6%29'/%3E%3C/svg%3E") left top / var(--wave-w) 170px repeat-x,
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='170' viewBox='0 0 150 170' preserveAspectRatio='none'%3E%3Cg transform='translate%280 170%29 scale%281 -1%29'%3E%3Cdefs%3E%3Cfilter id='b' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='10'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-150 -60 L-150 24 C-112.5 24 -112.5 38 -75.0 38 C-37.5 38 -37.5 24 0 24 C37.5 24 37.5 38 75.0 38 C112.5 38 112.5 24 150 24 C187.5 24 187.5 38 225.0 38 C262.5 38 262.5 24 300 24 L300 -60 Z' fill='rgb%2847,41,35%29' fill-opacity='0.34' filter='url%28%23b%29' transform='translate%280 6%29'/%3E%3C/g%3E%3C/svg%3E") left bottom / var(--wave-w) 170px repeat-x,
+        linear-gradient(to bottom,
+            hsl(var(--ink) / 0.10) var(--layer-overlap),
+            hsl(var(--ink) / 0.035) calc(var(--layer-overlap) + 60px),
+            transparent calc(var(--layer-overlap) + 140px)),
+        linear-gradient(to top,
+            hsl(var(--ink) / 0.10) var(--layer-overlap),
+            hsl(var(--ink) / 0.035) calc(var(--layer-overlap) + 60px),
+            transparent calc(var(--layer-overlap) + 140px)),
+        hsl(var(--paper)) url('fondo.jpg') center / cover;
+}
+
+/* Última sección hundida (sin hoja debajo): sin sombra inferior */
+.layer--down.layer--last {
+    padding-bottom: 4.25rem;
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='170' viewBox='0 0 150 170' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='b' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='10'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-150 -60 L-150 24 C-112.5 24 -112.5 38 -75.0 38 C-37.5 38 -37.5 24 0 24 C37.5 24 37.5 38 75.0 38 C112.5 38 112.5 24 150 24 C187.5 24 187.5 38 225.0 38 C262.5 38 262.5 24 300 24 L300 -60 Z' fill='rgb%2847,41,35%29' fill-opacity='0.34' filter='url%28%23b%29' transform='translate%280 6%29'/%3E%3C/svg%3E") left top / var(--wave-w) 170px repeat-x,
+        linear-gradient(to bottom,
+            hsl(var(--ink) / 0.10) var(--layer-overlap),
+            hsl(var(--ink) / 0.035) calc(var(--layer-overlap) + 60px),
+            transparent calc(var(--layer-overlap) + 140px)),
+        hsl(var(--paper)) url('fondo.jpg') center / cover;
+}
+
+.layer-inner {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+/* ---------------------------------------------------------
+   Tipografía de secciones
+   --------------------------------------------------------- */
+.section-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.1rem, 6.5vw, 2.9rem);
+    line-height: 1.15;
+    color: hsl(var(--ink));
+    margin-bottom: 0.75rem;
+    text-wrap: balance;
+}
+
+.section-subtitle {
+    max-width: 34rem;
+    margin: 0 auto 2.25rem;
+    color: hsl(var(--ink) / 0.72);
+}
+
+/* Círculo de íconos (unificado) */
+.icon-ring {
+    width: 5.5rem;
+    height: 5.5rem;
+    margin: 0 auto 1.5rem;
+    border-radius: 50%;
+    border: 1px solid hsl(var(--accent) / 0.45);
+    background: hsl(var(--accent) / 0.07);
+    color: hsl(var(--accent));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Ilustraciones doradas (anillos, copas, cámara, percha, notas, regalo) */
+.icon-art {
+    display: block;
+    width: 7.5rem;
+    height: 7.5rem;
+    margin: 0 auto 1.25rem;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 12px hsl(var(--accent-dark) / 0.18));
+}
+
+/* Ícono sin círculo (subir foto) */
+.icon-plain {
+    color: hsl(var(--accent));
+    margin: 0 auto 1rem;
+    line-height: 0;
+}
+
+/* Ícono del formulario de confirmación */
+.icon-form {
+    display: block;
+    width: 8.5rem;
+    height: 8.5rem;
+    margin: 0 auto 1.25rem;
+    filter: drop-shadow(0 10px 14px hsl(var(--accent-dark) / 0.2));
+}
+
+/* ---------------------------------------------------------
+   Countdown
+   --------------------------------------------------------- */
+.countdown-section { padding-top: 3.5rem; }
+
+.countdown-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(0.75rem, 4vw, 2rem);
+    flex-wrap: nowrap;
+}
+
+.countdown-item { min-width: 3.5rem; }
+
+.countdown-number {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(2.5rem, 10vw, 3.75rem);
+    line-height: 1;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: hsl(var(--ink));
+    margin-bottom: 0.4rem;
+}
+
+.countdown-label {
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: hsl(var(--accent-dark));
+}
+
+.countdown-separator {
+    width: 1px;
+    height: 2.75rem;
+    background: hsl(var(--accent) / 0.4);
+}
+
+/* ---------------------------------------------------------
+   Invitados (por URL)
+   --------------------------------------------------------- */
+.guest-badge {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.35rem;
+    color: #fff;
+    background: hsl(var(--accent-dark));
+}
+
+.guest-title { margin-bottom: 0.25rem; }
+
+.guest-subtitle {
+    color: hsl(var(--accent-dark));
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+}
+
+.guest-greeting {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    max-width: 24rem;
+    margin: 0 auto;
+}
+
+.guest-name {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 1.25rem;
+    padding: 0.35rem 1.25rem;
+    border-radius: 8px;
+    color: hsl(var(--ink));
+}
+
+.guest-name.color-1 { background: hsl(var(--accent) / 0.12); }
+.guest-name.color-2 { background: hsl(var(--accent-soft)); }
+.guest-name.color-3 { background: hsl(var(--accent-dark) / 0.1); }
+.guest-name.color-4 { background: hsl(var(--accent) / 0.2); }
+
+.guest-closing {
+    margin-top: 1.5rem;
+    color: hsl(var(--ink) / 0.72);
+}
+
+/* ---------------------------------------------------------
+   Ceremonia & Recepción
+   --------------------------------------------------------- */
+.events-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 3rem;
+}
+
+.event-title {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: 2rem;
+    line-height: 1.2;
+    color: hsl(var(--ink));
+    margin-bottom: 1.25rem;
+}
+
+.event-details { margin-bottom: 1.25rem; }
+
+.event-details h4 {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: 1.2rem;
+    color: hsl(var(--accent-dark));
+    margin-bottom: 0.2rem;
+}
+
+.event-details p { color: hsl(var(--ink) / 0.8); }
+
+.event-address {
+    font-size: 0.875rem;
+    color: hsl(var(--ink) / 0.6) !important;
+    margin-bottom: 0.5rem;
+}
+
+/* ---------------------------------------------------------
+   Galería
+   --------------------------------------------------------- */
+.carousel-container {
+    position: relative;
+    max-width: 760px;
+    margin: 0 auto 1.25rem;
+}
+
+.carousel-track-container {
+    overflow: hidden;
+    border-radius: 14px;
+    box-shadow: 0 18px 40px -22px hsl(var(--ink) / 0.5);
+}
+
+.carousel-track {
+    display: flex;
+    transition: transform 0.6s ease-in-out;
+}
+
+.carousel-item {
+    flex: 0 0 100%;
+    height: 560px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(var(--accent-soft) / 0.6);
+    overflow: hidden;
+}
+
+.carousel-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.92);
+    color: hsl(var(--accent-dark));
+    font-size: 1rem;
+    cursor: pointer;
+    box-shadow: 0 6px 16px -6px hsl(var(--ink) / 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.carousel-prev { left: 10px; }
+.carousel-next { right: 10px; }
+
+.carousel-counter {
+    color: hsl(var(--ink) / 0.6);
+    font-size: 0.85rem;
+}
+
+/* ---------------------------------------------------------
+   Detalles
+   --------------------------------------------------------- */
+.party-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 15.5rem));
+    justify-content: center;
+    gap: 1.25rem;
+}
+
+.party-card {
+    position: relative;
+    padding: 2rem 1.35rem 1.75rem;
+    border: 1px solid hsl(var(--accent) / 0.3);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: 0 14px 30px -24px hsl(var(--accent-dark) / 0.55);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Filete dorado interior, como marco de tarjeta de invitación */
+.party-card::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border: 1px solid hsl(var(--accent) / 0.18);
+    border-radius: 10px;
+    pointer-events: none;
+}
+
+.party-card .icon-art { width: 6.5rem; height: 6.5rem; }
+
+.party-card .event-title { font-size: 1.6rem; margin-bottom: 0.5rem; }
+
+.party-card p {
+    color: hsl(var(--ink) / 0.75);
+    margin-bottom: 1.5rem;
+    flex: 1;
+}
+
+/* ---------------------------------------------------------
+   Regalos / Confirmación
+   --------------------------------------------------------- */
+.gifts-container,
+.rsvp-container { max-width: 34rem; }
+
+.rsvp-text {
+    color: hsl(var(--ink) / 0.75);
+    margin-bottom: 1.5rem;
+}
+
+/* ---------------------------------------------------------
+   Footer (última capa, dorado profundo)
+   --------------------------------------------------------- */
+.footer.layer {
+    z-index: 1;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background:
+        linear-gradient(160deg, hsl(42 56% 49%) 0%, hsl(40 55% 38%) 100%);
+    color: hsl(var(--accent-soft));
+    padding-top: 3rem;
+    padding-bottom: calc(3rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* Si la sección anterior es elevada, su ola tapa el borde del footer
+   y proyecta la misma sombra ondulada sobre el dorado */
+.footer.layer.layer--after-up {
+    padding-top: calc(3rem + var(--layer-overlap));
+    background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='170' viewBox='0 0 150 170' preserveAspectRatio='none'%3E%3Cdefs%3E%3Cfilter id='b' x='-50%25' y='-50%25' width='200%25' height='200%25'%3E%3CfeGaussianBlur stdDeviation='10'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M-150 -60 L-150 24 C-112.5 24 -112.5 38 -75.0 38 C-37.5 38 -37.5 24 0 24 C37.5 24 37.5 38 75.0 38 C112.5 38 112.5 24 150 24 C187.5 24 187.5 38 225.0 38 C262.5 38 262.5 24 300 24 L300 -60 Z' fill='rgb%2847,41,35%29' fill-opacity='0.34' filter='url%28%23b%29' transform='translate%280 6%29'/%3E%3C/svg%3E") left top / var(--wave-w) 170px repeat-x,
+        linear-gradient(160deg, hsl(42 56% 49%) 0%, hsl(40 55% 38%) 100%);
+}
+
+/* Si la sección anterior es hundida, el footer se eleva con su propia ola
+   y proyecta la sombra hacia arriba */
+.footer.layer.footer--raised {
+    z-index: 3;
+    margin-top: calc(var(--layer-overlap) * -1);
+    padding-top: calc(3rem + 16px);
+    -webkit-mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cg transform='translate%280 18%29 scale%281 -1%29'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/g%3E%3C/svg%3E") left top / var(--wave-w) 18px repeat-x,
+        linear-gradient(#000, #000) left bottom / 100% calc(100% - 16px) no-repeat;
+            mask:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='18' viewBox='0 0 150 18' preserveAspectRatio='none'%3E%3Cg transform='translate%280 18%29 scale%281 -1%29'%3E%3Cpath d='M0 0 H150 V2 C112.5 2 112.5 16 75.0 16 C37.5 16 37.5 2 0 2 Z'/%3E%3C/g%3E%3C/svg%3E") left top / var(--wave-w) 18px repeat-x,
+        linear-gradient(#000, #000) left bottom / 100% calc(100% - 16px) no-repeat;
+}
+
+.footer.layer::before { display: none; }
+
+.footer-content h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 2rem;
+    color: #fff;
+}
+
+.footer-date {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.12em;
+    color: hsl(var(--accent-soft) / 0.9);
+}
+
+/* ---------------------------------------------------------
+   Toast
+   --------------------------------------------------------- */
+.toast {
+    position: fixed;
+    top: calc(5rem + env(safe-area-inset-top, 0px));
+    right: 1rem;
+    max-width: 300px;
+    padding: 1rem 1.25rem;
+    background: hsl(var(--paper));
+    border: 1px solid hsl(var(--accent) / 0.4);
+    border-radius: 12px;
+    box-shadow: 0 16px 36px -16px hsl(var(--ink) / 0.45);
+    z-index: 1000;
+    opacity: 0;
+    transform: translateX(120%);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.toast.show { opacity: 1; transform: translateX(0); }
+
+.toast h4 { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; }
+
+/* ---------------------------------------------------------
+   Responsive
+   --------------------------------------------------------- */
+@media (min-width: 901px) {
+    :root { --wave-w: calc(100% / 10); }
+}
+
+@media (max-width: 900px) {
+    .party-grid { grid-template-columns: minmax(0, 19rem); gap: 1.5rem; }
+}
+
+@media (max-width: 768px) {
+    :root { --layer-radius: 1.6rem; }
+    body { background-attachment: scroll; }
+    .events-container { grid-template-columns: 1fr; gap: 3.5rem; }
+    .carousel-item { height: 420px; }
+    .carousel-btn { width: 38px; height: 38px; }
+}
+
+@media (max-width: 480px) {
+    .layer { padding-left: 1rem; padding-right: 1rem; }
+    .carousel-item { height: 360px; }
+    .countdown-separator { height: 2.25rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .hero-scroll span { animation: none; }
+    .intro-seal-glow, .intro-hint-text { animation: none; }
+    body.is-revealing .hero-bg { animation-duration: 1.2s; }
+    .carousel-track { transition: none; }
+    .btn-wedding { transition: none; }
+}
+
+/* =========================================================
+   Albely & Tito — enlaces con estilo de botón
+   ========================================================= */
+a.btn-wedding { text-decoration: none; }
+
+/* =========================================================
+   Mensaje especial (entre el video y la invitación)
+   ========================================================= */
+.welcome {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: calc(4.5rem + env(safe-area-inset-top, 0px)) 1.25rem calc(2rem + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    background:
+        radial-gradient(ellipse at 50% 42%, #fffdf8 0%, #fff6e6 38%, #fbe9cf 75%, #f3dcb8 100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 1.2s cubic-bezier(.4, 0, .2, 1), visibility 0s linear 1.2s;
+}
+.welcome::before {               /* textura del papel */
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url('fondo.jpg') center / cover;
+    opacity: 0.35;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+.welcome.is-open {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 1.2s cubic-bezier(.4, 0, .2, 1), visibility 0s;
+}
+.welcome.is-leaving { opacity: 0; transition: opacity 0.9s ease; }
+
+.welcome-card {
+    position: relative;
+    max-width: 30rem;
+    width: 100%;
+    margin: auto;
+    padding: 2.6rem 1.9rem 2.2rem;
+    text-align: center;
+    border-radius: 1.4rem;
+    background: hsl(var(--paper) / 0.62);
+    border: 1px solid hsl(var(--accent) / 0.35);
+    box-shadow:
+        0 0 0 6px hsl(var(--paper) / 0.45),
+        0 0 0 7px hsl(var(--accent) / 0.22),
+        0 30px 60px -30px hsl(var(--ink) / 0.35);
+    -webkit-backdrop-filter: blur(3px);
+    backdrop-filter: blur(3px);
+    transform: translateY(14px);
+    transition: transform 1.4s cubic-bezier(.2, .7, .2, 1);
+}
+.welcome.is-open .welcome-card { transform: none; }
+
+.welcome-ornament {
+    display: block;
+    width: 9rem;
+    height: 1px;
+    margin: 0 auto 1.4rem;
+    background: linear-gradient(90deg, transparent, hsl(var(--accent)), transparent);
+    position: relative;
+}
+.welcome-ornament::after {
+    content: "";
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 7px; height: 7px;
+    background: hsl(var(--accent));
+    transform: translate(-50%, -50%) rotate(45deg);
+    box-shadow: 0 0 0 4px hsl(var(--paper));
+}
+
+.welcome-title {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-weight: 500;
+    font-size: clamp(1.85rem, 7vw, 2.4rem);
+    line-height: 1.12;
+    color: hsl(var(--accent-dark));
+    margin-bottom: 0.4rem;
+}
+.welcome-heart {
+    display: inline-block;
+    width: 0.7em; height: 0.7em;
+    vertical-align: 0.02em;
+    margin-left: 0.15em;
+    fill: none;
+    stroke: hsl(var(--accent));
+    stroke-width: 1.6;
+}
+.welcome-for {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: hsl(var(--ink) / 0.6);
+    margin: 0.6rem 0 0;
+}
+.welcome-for strong { color: hsl(var(--accent-dark)); font-weight: 500; }
+
+.welcome-text {
+    margin-top: 1.5rem;
+    font-family: var(--font-display);
+    font-size: clamp(1.12rem, 4.4vw, 1.3rem);
+    line-height: 1.6;
+    color: hsl(var(--ink) / 0.86);
+}
+.welcome-text p + p { margin-top: 0.95rem; }
+.welcome-text .welcome-accent {
+    font-style: italic;
+    font-size: 1.28em;
+    color: hsl(var(--accent-dark));
+}
+.welcome-text .welcome-closing { font-style: italic; }
+
+/* Cada letra aparece suave, como tinta que se asienta */
+.wl-ch {
+    opacity: 0;
+    filter: blur(4px);
+    transition: opacity 0.5s ease, filter 0.6s ease;
+}
+.wl-ch.on { opacity: 1; filter: none; }
+.wl-caret { position: relative; }
+.wl-caret::after {
+    content: "";
+    position: absolute;
+    left: 1px;
+    bottom: -0.18em;
+    width: 1.5px;
+    height: 1.1em;
+    background: hsl(var(--accent));
+    animation: wlBlink 0.9s steps(1) infinite;
+}
+@keyframes wlBlink { 50% { opacity: 0; } }
+
+.welcome-sign {
+    margin-top: 1.6rem;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.5rem;
+    color: hsl(var(--accent));
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 1s ease, transform 1s ease;
+}
+.welcome-continue {
+    margin-top: 1.4rem;
+    opacity: 0;
+    transform: translateY(8px);
+    pointer-events: none;
+    transition: opacity 0.9s ease 0.35s, transform 0.9s ease 0.35s;
+}
+.welcome.is-done .welcome-sign,
+.welcome.is-done .welcome-continue { opacity: 1; transform: none; pointer-events: auto; }
+
+.welcome-skip {
+    position: fixed;
+    top: calc(1rem + env(safe-area-inset-top, 0px));
+    right: 1rem;
+    z-index: 2;
+    padding: 0.5rem 1.1rem;
+    border-radius: 999px;
+    border: 1px solid hsl(var(--accent) / 0.55);
+    background: hsl(var(--paper) / 0.8);
+    color: hsl(var(--accent-dark));
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.3s ease, opacity 0.5s ease;
+}
+.welcome-skip:hover { background: hsl(var(--accent) / 0.12); }
+.welcome.is-done .welcome-skip { opacity: 0; pointer-events: none; }
+
+@media (max-width: 400px) {
+    .welcome-card { padding: 2.2rem 1.35rem 1.9rem; }
+}
+
+/* =========================================================
+   Modal del código de vestimenta
+   ========================================================= */
+.dress-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    background: hsl(var(--ink) / 0.55);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+.dress-modal.is-open { opacity: 1; visibility: visible; transition: opacity 0.35s ease; }
+.dress-modal-card {
+    position: relative;
+    width: 100%;
+    max-width: 44rem;
+    max-height: calc(100vh - 2rem);
+    max-height: calc(100dvh - 2rem);
+    overflow-y: auto;
+    padding: 1.8rem 1.2rem 1.4rem;
+    border-radius: 1.2rem;
+    background: hsl(var(--paper));
+    border: 1px solid hsl(var(--accent) / 0.4);
+    text-align: center;
+    box-shadow: 0 30px 60px -20px hsl(var(--ink) / 0.5);
+    transform: translateY(12px) scale(0.98);
+    transition: transform 0.35s ease;
+}
+.dress-modal.is-open .dress-modal-card { transform: none; }
+.dress-close {
+    position: absolute;
+    top: 0.5rem; right: 0.7rem;
+    width: 2.2rem; height: 2.2rem;
+    border: none;
+    background: none;
+    font-size: 1.8rem;
+    line-height: 1;
+    color: hsl(var(--accent-dark));
+    cursor: pointer;
+}
+.dress-title {
+    font-family: var(--font-display);
+    font-size: 1.7rem;
+    font-weight: 600;
+    color: hsl(var(--ink));
+}
+.dress-sub {
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.15rem;
+    color: hsl(var(--accent-dark));
+    margin: 0.15rem 0 1rem;
+}
+.dress-img-link { display: block; }
+.dress-img-link img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 0.8rem;
+    border: 1px solid hsl(var(--accent) / 0.25);
+}
+.dress-notes {
+    list-style: none;
+    margin: 1rem 0 0;
+    padding: 0;
+    text-align: left;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: hsl(var(--ink) / 0.8);
+}
+.dress-notes li + li { margin-top: 0.5rem; }
+.dress-notes strong { color: hsl(var(--accent-dark)); font-weight: 500; }
+.dress-hint { margin-top: 0.8rem; font-size: 0.72rem; color: hsl(var(--ink) / 0.5); }
+
+/* Ceremonia única con ilustración de la villa */
+.events-container.events-single { grid-template-columns: minmax(0, 30rem); justify-content: center; }
+.venue-art {
+    display: block;
+    width: 100%;
+    max-width: 24rem;
+    height: auto;
+    margin: 0 auto 1.4rem;
+    mix-blend-mode: multiply;          /* el borde blanco de acuarela se funde con el papel */
+}
+.venue-reception {
+    margin-top: 0.4rem;
+    padding-top: 1rem;
+    border-top: 1px solid hsl(var(--accent) / 0.3);
+}
