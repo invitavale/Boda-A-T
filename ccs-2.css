@@ -1182,3 +1182,112 @@ a.btn-wedding { text-decoration: none; }
     padding-top: 1rem;
     border-top: 1px solid hsl(var(--accent) / 0.3);
 }
+
+/* =========================================================
+   Paleta final · Opción A: papel crema, acentos verde oliva y detalles dorados
+   ========================================================= */
+:root{--olive:78 30% 30%;--olive-l:76 26% 45%;}
+.section-title,.event-title,.countdown-number,.welcome-title{color:hsl(var(--olive))!important}
+.event-details h4,.countdown-label{color:hsl(var(--accent-dark))!important}
+.btn-wedding{background:linear-gradient(135deg,hsl(var(--olive)) 0%,hsl(var(--olive-l)) 50%,hsl(var(--olive)) 100%)!important;background-size:200% 100%!important;border:1px solid hsl(var(--accent))!important;text-shadow:none!important;box-shadow:0 0 0 3px hsl(var(--paper)),0 0 0 4px hsl(var(--accent)/.55),0 10px 22px -12px hsl(var(--olive))!important}
+.party-card{border-color:hsl(var(--accent)/.5)!important}
+.footer.layer,.footer.layer.layer--after-up{background:linear-gradient(160deg,hsl(78 30% 34%),hsl(78 32% 24%))!important}
+.footer-content h3,.footer-date{color:hsl(var(--accent-light))!important}
+.welcome-heart{stroke:hsl(var(--olive))}
+
+/* Regalo: datos bancarios */
+.gift-card { max-width: 24rem; }
+.gift-data { margin: 0.4rem 0 1.4rem; display: grid; gap: 0.75rem; text-align: center; }
+.gift-data div { padding-bottom: 0.7rem; border-bottom: 1px solid hsl(var(--accent) / 0.25); }
+.gift-data div:last-child { border-bottom: none; padding-bottom: 0; }
+.gift-data dt { font-family: var(--font-display); font-style: italic; font-size: 1.05rem; color: hsl(var(--accent-dark)); }
+.gift-data dd { margin: 0.1rem 0 0; font-size: 0.95rem; color: hsl(var(--ink)); }
+.gift-data .gift-account {
+    font-family: var(--font-display);
+    font-size: 1.9rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    font-variant-numeric: lining-nums tabular-nums;
+    color: hsl(var(--olive, var(--ink)));
+    user-select: all;
+}
+
+/* Solo adultos: silueta del niño con globo */
+.party-card .icon-art.icon-kid { width: 6.5rem; height: 7rem; filter: none; }
+
+/* Número de cuenta con ícono de copiar */
+.gift-account-row { display: flex; align-items: center; justify-content: center; gap: 0.6rem; }
+.gift-copy {
+    position: relative;
+    flex: none;
+    width: 2.4rem; height: 2.4rem;
+    border-radius: 50%;
+    border: 1px solid hsl(var(--accent) / 0.6);
+    background: hsl(var(--paper));
+    color: hsl(var(--olive, var(--accent-dark)));
+    cursor: pointer;
+    display: grid; place-items: center;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+}
+.gift-copy:hover { background: hsl(var(--accent) / 0.12); }
+.gift-copy:active { transform: scale(0.94); }
+.gift-copy:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 2px; }
+.gift-copy svg { grid-area: 1 / 1; width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.2s ease, transform 0.2s ease; }
+.gift-copy .ic-check { opacity: 0; transform: scale(0.6); }
+.gift-copy.is-copied { background: hsl(var(--olive, var(--accent-dark))); color: #fff; border-color: transparent; }
+.gift-copy.is-copied .ic-copy { opacity: 0; transform: scale(0.6); }
+.gift-copy.is-copied .ic-check { opacity: 1; transform: none; }
+.gift-copied { min-height: 1.1em; margin: 0.35rem 0 0; font-size: 0.75rem; color: hsl(var(--accent-dark)); }
+.gift-data { margin-bottom: 0.4rem; }
+
+/* Mensaje especial sobre papel con lirios: siempre cabe en una sola pantalla */
+.welcome {
+    padding: calc(0.75rem + env(safe-area-inset-top, 0px)) 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) !important;
+    overflow: hidden !important;
+}
+.welcome-card {
+    --ch: calc(100vh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+    --cw: min(calc(100vw - 1.5rem), calc(var(--ch) * 0.6));
+    width: var(--cw) !important;
+    height: var(--ch) !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    font-size: 16px;              /* java2.js lo ajusta para que todo quepa */
+    background:
+        url('papel-top.webp') center top / 100% auto no-repeat,
+        url('papel-bottom.webp') center bottom / 100% auto no-repeat,
+        url('papel-mid.jpg') center / 100% 100% no-repeat !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    filter: drop-shadow(0 22px 30px hsl(var(--ink) / 0.22));
+    padding: calc(var(--cw) * 0.25) calc(var(--cw) * 0.11) calc(var(--cw) * 0.31) !important;
+}
+@supports (height: 100dvh) {
+    .welcome-card { --ch: calc(100dvh - 1.5rem - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); }
+}
+.welcome-card > * { flex: none; }
+.welcome-ornament { margin-bottom: 0.9em !important; }
+.welcome-title { font-size: 2.05em !important; }
+.welcome-for { font-size: 0.72em !important; }
+.welcome-text { font-size: 1.16em !important; margin-top: 0.9em !important; line-height: 1.5 !important; }
+.welcome-text p + p { margin-top: 0.6em !important; }
+.welcome-sign { font-size: 1.45em !important; margin-top: 0.7em !important; }
+.welcome-continue { margin: 0.8em auto 0 !important; position: relative; overflow: hidden; align-self: center; }
+.welcome-ornament::after { box-shadow: 0 0 0 4px #f6ead2; }
+/* Línea dorada que avanza: la invitación se abre sola al llenarse */
+.welcome-continue::after {
+    content: "";
+    position: absolute;
+    left: 0; bottom: 0;
+    height: 2px; width: 0;
+    background: hsl(var(--accent-light));
+}
+.welcome.is-auto .welcome-continue::after { animation: wlProgress var(--auto-ms, 5000ms) linear forwards; }
+@keyframes wlProgress { to { width: 100%; } }
+.welcome-skip { z-index: 3; }

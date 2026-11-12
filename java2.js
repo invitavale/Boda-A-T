@@ -209,20 +209,45 @@ function showWelcome(onDone) {
     caret.className = 'wl-caret';
     caret.setAttribute('aria-hidden', 'true');
 
-    let i = 0, timer = null, closed = false;
+    let i = 0, timer = null, autoTimer = null, closed = false;
 
-    const done = () => {
+    // Ajusta el tamaño de letra para que el mensaje completo quepa en una pantalla
+    const card = box.querySelector('.welcome-card');
+    const fit = () => {
+        if (!card) return;
+        const cs = getComputedStyle(card);
+        const avail = card.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+        const kids = [...card.children].filter(el => getComputedStyle(el).display !== 'none');
+        if (!kids.length) return;
+        const need = () => {
+            const top = kids[0].getBoundingClientRect().top;
+            const last = kids[kids.length - 1].getBoundingClientRect().bottom;
+            return last - top;
+        };
+        let fs = Math.min(18, Math.max(12, card.clientWidth / 22));
+        card.style.fontSize = fs + 'px';
+        while (need() > avail && fs > 9) { fs -= 0.5; card.style.fontSize = fs + 'px'; }
+    };
+
+    const AUTO_MS = 5000;   // espera tras terminar el texto antes de abrir solo
+    const done = (fast) => {
         clearTimeout(timer);
         chars.forEach(o => o.el.classList.add('on'));
         caret.remove();
         box.classList.add('is-done');
-        setTimeout(() => { const b = document.getElementById('welcomeContinue'); if (b) b.focus({ preventScroll: true }); }, 900);
+        // Si el texto apareció de golpe (movimiento reducido), dar tiempo de leer
+        const wait = fast === true ? 20000 : AUTO_MS;
+        box.style.setProperty('--auto-ms', wait + 'ms');
+        box.classList.add('is-auto');
+        autoTimer = setTimeout(leave, wait);
     };
 
     const leave = () => {
         if (closed) return;
         closed = true;
         clearTimeout(timer);
+        clearTimeout(autoTimer);
+        window.removeEventListener('resize', fit);
         onDone();                       // arranca el velo y la portada
         box.classList.add('is-leaving');
         setTimeout(() => {
@@ -251,8 +276,11 @@ function showWelcome(onDone) {
     void box.offsetWidth;
     box.classList.add('is-open');
     box.setAttribute('aria-hidden', 'false');
+    fit();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+    window.addEventListener('resize', fit);
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { done(); return; }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { done(true); return; }
     timer = setTimeout(step, 1300);   // pausa breve tras el título
 }
 
@@ -626,3 +654,51 @@ function showToast(title, message) {
         toast.classList.remove('show');
     }, 4000);
 }
+
+// Regalo: ventana con los datos bancarios
+function showGifts() {
+    const m = document.getElementById('giftModal');
+    if (!m) return;
+    m.classList.add('is-open');
+    m.setAttribute('aria-hidden', 'false');
+    document.documentElement.style.overflow = 'hidden';
+}
+
+function closeGifts() {
+    const m = document.getElementById('giftModal');
+    if (!m) return;
+    m.classList.remove('is-open');
+    m.setAttribute('aria-hidden', 'true');
+    document.documentElement.style.overflow = '';
+}
+
+function copyAccount() {
+    const num = document.getElementById('giftAccount').textContent.trim();
+    const btn = document.getElementById('giftCopy');
+    const msg = document.getElementById('giftCopied');
+    const say = (t, done) => {
+        msg.textContent = t;
+        btn.classList.toggle('is-copied', !!done);
+        clearTimeout(copyAccount._t);
+        copyAccount._t = setTimeout(() => { msg.textContent = ''; btn.classList.remove('is-copied'); }, 2200);
+    };
+    const fallback = () => {
+        // Selecciona el número para que el invitado lo copie a mano
+        const r = document.createRange();
+        r.selectNodeContents(document.getElementById('giftAccount'));
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+        try { if (document.execCommand('copy')) { sel.removeAllRanges(); say('Número copiado', true); return; } } catch (e) {}
+        say('Número seleccionado, cópialo', false);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(num).then(() => say('Número copiado', true), fallback);
+    } else {
+        fallback();
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const m = document.getElementById('giftModal');
+    if (m) m.addEventListener('click', (e) => { if (e.target === m) closeGifts(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeGifts(); });
+});
