@@ -2,8 +2,6 @@
 let isPlaying = false;          // la música está sonando
 let musicStarted = false;       // ya pasó el segundo 5 del video
 let musicUnlocked = false;      // el audio quedó habilitado con el toque (iOS)
-let currentSlide = 0;
-const totalSlides = 6;
 let carouselTimer = null;
 
 // Segundo del video en el que arranca la música
@@ -496,72 +494,104 @@ function initializeCountdown() {
     setInterval(updateCountdown, 1000);
 }
 
-// Carrusel
+// Carrusel: polaroids apiladas. La de arriba se va volando y pasa al fondo.
 function initializeCarousel() {
-    const track = document.getElementById('carouselTrack');
-    const prevBtn = document.getElementById('prevBtn');
-    const nextBtn = document.getElementById('nextBtn');
-    const currentSlideElement = document.getElementById('currentSlide');
-    const totalSlidesElement = document.getElementById('totalSlides');
-    
-    totalSlidesElement.textContent = totalSlides;
-    updateSlideCounter();
-    
-    prevBtn.addEventListener('click', () => {
-        if (currentSlide > 0) {
-            currentSlide--;
-        } else {
-            currentSlide = totalSlides - 1;
-        }
-        updateCarousel();
-        startCarouselAutoplay();
+    const stack = document.getElementById('polStack');
+    if (!stack) return;
+    const cards = [...stack.querySelectorAll('.pol')];
+    const dots = [...document.querySelectorAll('#polDots i')];
+    const status = document.getElementById('polStatus');
+    const n = cards.length;
+    let order = cards.map((_, i) => i);   // order[0] = la foto de arriba
+    let busy = false;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const layout = () => {
+        order.forEach((ci, depth) => {
+            const c = cards[ci];
+            c.dataset.depth = Math.min(depth, 3);
+            c.style.zIndex = String(n - depth);
+        });
+        const top = order[0];
+        dots.forEach((d, i) => d.classList.toggle('on', i === top));
+        if (status) status.textContent = `Foto ${top + 1} de ${n}`;
+    };
+
+    const next = (dir = -1) => {
+        if (busy) return;
+        busy = true;
+        const top = cards[order[0]];
+        top.style.setProperty('--fly', dir < 0 ? '-135%' : '135%');
+        top.style.setProperty('--flyr', dir < 0 ? '-18deg' : '18deg');
+        top.classList.add('is-flying');
+        top.style.transform = '';
+        setTimeout(() => {
+            order.push(order.shift());
+            top.classList.remove('is-flying');
+            top.classList.add('no-anim');
+            layout();
+            void top.offsetWidth;
+            top.classList.remove('no-anim');
+            busy = false;
+        }, reduce ? 10 : 420);
+    };
+
+    const prev = () => {
+        if (busy) return;
+        busy = true;
+        const last = cards[order[n - 1]];
+        last.classList.add('no-anim', 'is-flying');
+        last.style.setProperty('--fly', '135%');
+        last.style.setProperty('--flyr', '18deg');
+        order.unshift(order.pop());
+        layout();
+        void last.offsetWidth;
+        last.classList.remove('no-anim', 'is-flying');
+        setTimeout(() => { busy = false; }, reduce ? 10 : 420);
+    };
+
+    // Arrastrar con el dedo o el mouse
+    let startX = null, dx = 0, moved = false;
+    stack.addEventListener('pointerdown', (e) => {
+        if (busy) return;
+        startX = e.clientX; dx = 0; moved = false;
+        stack.setPointerCapture(e.pointerId);
+        cards[order[0]].classList.add('no-anim');
     });
-    
-    nextBtn.addEventListener('click', () => {
-        if (currentSlide < totalSlides - 1) {
-            currentSlide++;
-        } else {
-            currentSlide = 0;
-        }
-        updateCarousel();
-        startCarouselAutoplay();
+    stack.addEventListener('pointermove', (e) => {
+        if (startX === null) return;
+        dx = e.clientX - startX;
+        if (Math.abs(dx) > 6) moved = true;
+        cards[order[0]].style.transform = `translateX(calc(-50% + ${dx}px)) rotate(${-1 + dx / 18}deg)`;
     });
-    
-    // Deslizar con el dedo en el celular
-    const trackContainer = track.parentElement;
-    let touchX = null;
-    trackContainer.addEventListener('touchstart', (e) => { touchX = e.touches[0].clientX; }, { passive: true });
-    trackContainer.addEventListener('touchend', (e) => {
-        if (touchX === null) return;
-        const dx = e.changedTouches[0].clientX - touchX;
-        touchX = null;
-        if (Math.abs(dx) < 40) return;
-        (dx < 0 ? nextBtn : prevBtn).click();
+    const release = () => {
+        if (startX === null) return;
+        const top = cards[order[0]];
+        top.classList.remove('no-anim');
+        startX = null;
+        if (Math.abs(dx) > 60) { next(dx < 0 ? -1 : 1); }
+        else { top.style.transform = ''; if (!moved) next(-1); }   // un toque también pasa la foto
+        restartAutoplay();
+    };
+    stack.addEventListener('pointerup', release);
+    stack.addEventListener('pointercancel', () => { if (startX !== null) { cards[order[0]].classList.remove('no-anim'); cards[order[0]].style.transform = ''; startX = null; } });
+
+    document.getElementById('polNext').addEventListener('click', () => { next(-1); restartAutoplay(); });
+    document.getElementById('polPrev').addEventListener('click', () => { prev(); restartAutoplay(); });
+    stack.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') { next(-1); restartAutoplay(); }
+        if (e.key === 'ArrowLeft') { prev(); restartAutoplay(); }
     });
 
-    startCarouselAutoplay();
-}
+    // Avanza sola cada 4.5 s; se reinicia cuando el invitado toca
+    function restartAutoplay() {
+        clearInterval(carouselTimer);
+        if (reduce) return;
+        carouselTimer = setInterval(() => { if (!document.hidden) next(-1); }, 4500);
+    }
 
-// Auto-play del carrusel (se reinicia cuando el invitado cambia de foto,
-// para que no salte justo después de tocar una flecha)
-function startCarouselAutoplay() {
-    clearInterval(carouselTimer);
-    carouselTimer = setInterval(() => {
-        currentSlide = (currentSlide + 1) % totalSlides;
-        updateCarousel();
-    }, 4000);
-}
-
-function updateCarousel() {
-    const track = document.getElementById('carouselTrack');
-    const translateX = -currentSlide * 100;
-    track.style.transform = `translateX(${translateX}%)`;
-    updateSlideCounter();
-}
-
-function updateSlideCounter() {
-    const currentSlideElement = document.getElementById('currentSlide');
-    currentSlideElement.textContent = currentSlide + 1;
+    layout();
+    restartAutoplay();
 }
 
 // Parallax en la portada (mueve la capa de fondo al hacer scroll)

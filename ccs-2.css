@@ -333,7 +333,7 @@ body.intro-done .intro-sparkles { display: none; }
     right: 0;
     top: -60px;                    /* colchón para el parallax (igual a BUFFER_PX en JS) */
     height: calc(100% + 60px);
-    background: url('foto0.jpg') center 25% / cover no-repeat;
+    background: #1e1812 url('foto0.jpg?v=20261113f') center top / cover no-repeat;
     will-change: transform;
 }
 
@@ -1291,3 +1291,145 @@ a.btn-wedding { text-decoration: none; }
 .welcome.is-auto .welcome-continue::after { animation: wlProgress var(--auto-ms, 5000ms) linear forwards; }
 @keyframes wlProgress { to { width: 100%; } }
 .welcome-skip { z-index: 3; }
+
+/* Nota de sobres en blanco (Regalos) */
+.gift-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    max-width: 24rem;
+    margin: 1.6rem auto 0;
+    padding: 0.9rem 1.1rem;
+    border: 1px dashed hsl(var(--accent) / 0.55);
+    border-radius: 12px;
+    background: hsl(var(--paper) / 0.7);
+    text-align: left;
+    font-size: 0.85rem;
+    line-height: 1.55;
+    color: hsl(var(--ink) / 0.8);
+}
+.gift-note svg { flex: none; width: 1.5rem; height: 1.5rem; margin-top: 0.1rem; fill: none; stroke: hsl(var(--accent-dark)); stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; }
+.gift-note strong { color: hsl(var(--olive, var(--accent-dark))); font-weight: 500; }
+.dress-modal .gift-note { margin-top: 1rem; }
+
+
+/* =========================================================
+   Carrusel · Polaroids apiladas
+   ========================================================= */
+.pol-stack {
+    --pw: min(270px, 72vw);              /* ancho de cada polaroid */
+    position: relative;
+    height: calc(var(--pw) * 1.43 + 34px);
+    margin: 0.4rem auto 0;
+    max-width: 100%;
+    touch-action: pan-y;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+}
+.pol-stack:active { cursor: grabbing; }
+.pol-stack:focus-visible .pol[data-depth="0"] { outline: 2px solid hsl(var(--accent)); outline-offset: 4px; }
+.pol {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    width: var(--pw);
+    margin: 0;
+    padding: calc(var(--pw) * 0.045) calc(var(--pw) * 0.045) calc(var(--pw) * 0.19);
+    background: #fff;
+    box-shadow: 0 18px 30px -14px hsl(var(--ink) / 0.45), 0 2px 4px hsl(var(--ink) / 0.08);
+    transition: transform 0.45s cubic-bezier(.2, .8, .2, 1), opacity 0.45s ease;
+    will-change: transform;
+}
+.pol img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    object-fit: cover;
+    pointer-events: none;
+}
+.pol figcaption {
+    position: absolute;
+    left: 0; right: 0;
+    bottom: calc(var(--pw) * 0.055);
+    text-align: center;
+    font-family: var(--font-display);
+    font-style: italic;
+    font-size: 1.3rem;
+    color: hsl(var(--olive, var(--accent-dark)));
+}
+.pol[data-depth="0"] { transform: translateX(-50%) rotate(-1deg); }
+.pol[data-depth="1"] { transform: translateX(-50%) translate(-16px, 4px) rotate(-6deg); }
+.pol[data-depth="2"] { transform: translateX(-50%) translate(18px, 8px) rotate(7deg); }
+.pol[data-depth="3"] { transform: translateX(-50%) translate(0, 10px) rotate(2deg); opacity: 0; }
+.pol.is-flying { transform: translateX(calc(-50% + var(--fly, -135%))) rotate(var(--flyr, -18deg)) !important; opacity: 0; }
+.pol.no-anim { transition: none !important; }
+.pol-tape {
+    position: absolute;
+    top: 2px;
+    left: 50%;
+    width: 84px; height: 24px;
+    transform: translateX(-50%) rotate(-3deg);
+    background: hsl(var(--accent-light) / 0.55);
+    box-shadow: 0 1px 2px hsl(var(--ink) / 0.08);
+    z-index: 20;
+    pointer-events: none;
+}
+.pol-controls { display: flex; align-items: center; justify-content: center; gap: 1rem; margin-top: 1.2rem; }
+.pol-arrow {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: hsl(var(--olive, var(--accent-dark)));
+    color: #fff;
+    font-size: 0.85rem;
+    cursor: pointer;
+    box-shadow: 0 0 0 3px hsl(var(--paper)), 0 0 0 4px hsl(var(--accent) / 0.6);
+    display: grid; place-items: center;
+}
+.pol-arrow:focus-visible { outline: 2px solid hsl(var(--accent)); outline-offset: 4px; }
+.pol-dots { display: flex; gap: 8px; }
+.pol-dots i { width: 7px; height: 7px; border-radius: 4px; background: hsl(var(--accent-dark) / 0.3); transition: width 0.3s ease, background 0.3s ease; }
+.pol-dots i.on { width: 22px; background: hsl(var(--olive, var(--accent-dark))); }
+.pol-hint { margin-top: 0.8rem; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: hsl(var(--ink) / 0.5); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* Portada en pantallas anchas: la foto original completa */
+@media (min-width: 769px) and (min-aspect-ratio: 3/4) {
+    .hero-bg { background-image: url('foto0-desk.jpg?v=20261113f'); background-position: center center; }
+}
+
+
+/* Más contraste para los nombres sobre la ropa blanca de la portada */
+.hero-shade {
+    background:
+        linear-gradient(to top, rgba(30, 24, 18, 0.82) 0%, rgba(30, 24, 18, 0.5) 30%, rgba(30, 24, 18, 0.12) 52%, rgba(30, 24, 18, 0) 65%),
+        linear-gradient(to bottom, rgba(30, 24, 18, 0.2) 0%, rgba(30, 24, 18, 0) 16%);
+}
+.hero-names, .hero-kicker, .hero-date { text-shadow: 0 2px 18px rgba(20, 15, 10, 0.55); }
+
+/* Flechas del carrusel más discretas */
+.pol-controls { gap: 0.9rem; margin-top: 1rem; }
+.pol-arrow {
+    width: 30px; height: 30px;
+    background: transparent;
+    color: hsl(var(--olive, var(--accent-dark)));
+    border: 1px solid hsl(var(--accent) / 0.55);
+    box-shadow: none;
+    font-size: 0.7rem;
+    opacity: 0.85;
+    transition: background 0.25s ease, opacity 0.25s ease;
+}
+.pol-arrow:hover { background: hsl(var(--accent) / 0.12); opacity: 1; }
+
+/* Fotos del carrusel lo más grandes posible sin agrandar la sección:
+   marco de polaroid más fino y el espacio que sobraba arriba pasa a la foto */
+.gallery-section .section-subtitle { margin-bottom: 1.25rem; }
+.gallery-section .icon-art { width: auto; height: 84px; margin-bottom: 0.6rem; }
+.pol-stack { --pw: min(322px, 84vw); height: calc(var(--pw) * 1.402 + 34px); }
+.pol { padding: calc(var(--pw) * 0.025) calc(var(--pw) * 0.025) calc(var(--pw) * 0.11); }
+.pol figcaption { bottom: calc(var(--pw) * 0.022); font-size: 1.1rem; }
+.pol[data-depth="1"] { transform: translateX(-50%) translate(-10px, 4px) rotate(-4.5deg); }
+.pol[data-depth="2"] { transform: translateX(-50%) translate(12px, 8px) rotate(5deg); }
+.pol-controls { margin-top: 0.6rem; }
